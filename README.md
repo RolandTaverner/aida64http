@@ -128,3 +128,7 @@ trustedCertificateFile = "host.key"
 # Authorization tokens. If configured, one of them must be provided in the HTTP header: 'Authorization: Bearer aaa'.
 authTokens = aaa,bbb
 ```
+
+# Tech details
+
+Implemented in [D language](https://dlang.org) with [vibe.d](https://vibed.org) as HTTP server, [andrewbenton/prometheus-d](https://github.com/andrewbenton/prometheus-d) as Prometheus metrics provider, [RolandTaverner/windows-d](https://github.com/RolandTaverner/windows-d) as Windows API projection for D.
