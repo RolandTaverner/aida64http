@@ -1,0 +1,35 @@
+{
+	"name": "aida64http",
+	"description": "",
+	"authors": ["Alexander Verbitsky"],
+    "sourcePaths": [
+        "source"
+    ],
+	"license": "Unlicense",
+	"buildTypes": {
+		"debug": {
+			"buildOptions": [
+				"debugMode",
+				"debugInfo",
+				"optimize"
+			]
+		},
+		"release": {
+			"buildOptions": [
+				"releaseMode",
+				"inline",
+				"optimize"
+			]
+		}
+	},
+	"dependencies": {
+		"argsd": "~>1.2.0",
+		"vibe-d": "~>0.9",
+		"prometheus": "~>0.2.1",
+		"windows-d:windows": {"path": "../windows-d"}
+	},
+	"libs": ["user32", "gdi32"],
+    "targetName": "aida64http",
+    "targetType": "executable",
+	"targetPath": "bin/$BUILD_TYPE"
+}
