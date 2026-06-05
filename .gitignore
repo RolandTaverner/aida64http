@@ -1,9 +1,6 @@
-bin/
+bin
 *.bak
-.vscode/
-
-# local temporary files
-.local/
+.vscode
 
 # Compiled Object files
 *.o
