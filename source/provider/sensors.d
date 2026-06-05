@@ -1,15 +1,18 @@
 module provider.sensors;
 
-import std.concurrency : ownerTid, receiveTimeout, send;
 import core.sync.rwmutex : ReadWriteMutex;
+import std.concurrency : ownerTid, receiveTimeout, send;
+import std.conv : ConvException, to;
 import std.datetime : seconds;
 import std.datetime.systime : Clock, SysTime;
 import std.datetime.timezone : UTC;
+
 //import std.stdio : writeln;
+
+import prometheus.gauge : Gauge;
 
 import aida64.sensorvalues;
 import aida64.parse;
-
 
 public shared class SensorsProvider
 {
@@ -39,9 +42,30 @@ public shared class SensorsProvider
             synchronized (mutex.writer)
             {
                 // writeln("Worker: data updated");
+                // TODO: log
                 latestData = newData;
             }
+
+            synchronized (mutex.reader)
+            {
+                auto sensorsData = getSensors();
+                foreach(s; sensorsData.sensors)
+                {
+                    double value;
+                    try 
+                    {
+                        value = to!double(s.value);
+                    } 
+                    catch (ConvException e) {
+                        //writeln("Conversion failed: The string is not a valid number.");
+                        // TODO: log
+                        continue;
+                    }
+                    sensorGauge.set(value, [sensorsData.hostName, s.id, s.unit, s.label]);
+                }
+            }
         }
+
         // writeln("Worker: exit");
     }
 
@@ -56,6 +80,7 @@ public shared class SensorsProvider
     private SensorDataStore latestData;
     private ReadWriteMutex mutex;
     private string hostName;
+    private Gauge gauge;
 }
 
 public struct SensorData
@@ -83,4 +108,11 @@ private shared class SensorDataStore
     immutable string hostName;
     immutable Sensor[] sensors;
     immutable SysTime timestamp;
+}
+
+private __gshared Gauge sensorGauge = new Gauge("aida64_sensor_value", "Values of AIDA64 sensors", ["host_name", "id", "unit", "label"]);
+
+static this()
+{
+    sensorGauge.register();
 }

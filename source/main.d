@@ -7,14 +7,16 @@ import std.format : format;
 import std.path : buildPath;
 import std.stdio : writeln;
 
+import prometheus.registry : Registry;
+import prometheus.vibe : handleMetrics;
 import vibe.core : finalizeCommandLineOptions, logInfo, printCommandLineHelp, readOption, runApplication;
 import vibe.http.router: URLRouter;
 import vibe.http.server : HTTPServerSettings, listenHTTP;
 import vibe.stream.tls : createTLSContext, TLSContextKind;
 import vibe.web.rest : registerRestInterface, RestInterfaceSettings;
 
-import windows.win32.ui.windowsandmessaging : MessageBoxW, MB_OK, MB_ICONERROR;
-import windows.win32.foundation : HWND, PWSTR;
+// import windows.win32.ui.windowsandmessaging : MessageBoxW, MB_OK, MB_ICONERROR;
+// import windows.win32.foundation : HWND, PWSTR;
 
 import options;
 import provider.sensors : SensorsProvider, worker;
@@ -38,8 +40,10 @@ int main(string[] args)
 		return -1;
 	}
 	finalizeCommandLineOptions();
-
-	SensorsProvider provider = new SensorsProvider("this");
+	
+	writeln("Host name: ", opts.hostName);
+	
+	SensorsProvider provider = new SensorsProvider(opts.hostName);
 	auto workerThread = spawn(&worker, &provider.start);
 	scope (exit)
 	{
@@ -55,6 +59,7 @@ int main(string[] args)
 	auto restSettings = new RestInterfaceSettings;
 	auto router = new URLRouter;
 	registerRestInterface(router, restService, restSettings);
+	router.get("/metrics", handleMetrics(Registry.global));
 
 	auto settings = new HTTPServerSettings;
 	settings.bindAddresses = opts.bindAddresses.length != 0 ? opts.bindAddresses : ["127.0.0.1"];
@@ -79,35 +84,7 @@ int main(string[] args)
 		listener.stopListening();
 	}
 
-	logInfo("Listening " ~ (opts.privateKeyFile.length != 0 ? "https" : "http") ~ "://127.0.0.1:" 
-		~ to!(string)(opts.port));
 	runApplication(&args);
 
-	// wstring errCaption = "Error";
-
-	// char[] buf;
-	// try 
-	// {
-	// 	buf = getSensorValuesData();
-	// }
-	// catch(Exception e)
-	// {
-	// 	auto errText = to!wstring(e.message);
-	// 	errText ~= 0;
-	// 	MessageBoxW(HWND(null), PWSTR(cast(wchar*)errText.ptr), PWSTR(cast(wchar*)errCaption.ptr), MB_OK | MB_ICONERROR);
-	// 	return 1;
-	// }
-	// auto sensors = parseRawData(buf);
-	// foreach(s; sensors)
-	// {
-	// 	writeln(s);
-	// }
-	// string s = buf.idup;
-	// writeln(s);
-
-	// wstring c = "Data";
-	// wstring msg = s.to!wstring;
-
-	//MessageBoxW(HWND(null), PWSTR(cast(wchar*)msg.ptr), PWSTR(cast(wchar*)c.ptr), 0);
 	return 0;
 }

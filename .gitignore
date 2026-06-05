@@ -1,6 +1,7 @@
 bin
 *.bak
 .vscode
+.local
 
 # Compiled Object files
 *.o
