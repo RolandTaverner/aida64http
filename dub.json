@@ -36,6 +36,5 @@
 	"targetType": "executable",
 	"targetPath": "bin/$BUILD_TYPE",
 	"dflags": ["-L/SUBSYSTEM:WINDOWS", "-L/ENTRY:wWinMainCRTStartup"],
-	"versions": ["VibeDisableCommandLineParsing"],
-	"libs": ["kernel32", "msvcrt"]
+	"versions": ["VibeDisableCommandLineParsing"]
 }
