@@ -3,6 +3,8 @@ module window.msgloop;
 import windows.win32.ui.windowsandmessaging;
 import windows.win32.foundation : LRESULT, HWND, WPARAM, LPARAM, PWSTR, HINSTANCE, FALSE;
 
+import vibe.core.core : exitEventLoop;
+
 public shared class MessageLoop
 {
     public this(HINSTANCE hInst)
@@ -33,31 +35,29 @@ public shared class MessageLoop
             return;
         }
 
-        //ShowWindow(hwnd, nCmdShow);
+        //ShowWindow(cast(HWND)hWnd, 1);
 
-        // 5. The Core Message Loop
+        // Run message loop
         MSG msg;
         while (GetMessageW(&msg, HWND(null), 0, 0) != FALSE)
         {
             TranslateMessage(&msg); // Translates keystrokes into characters
             DispatchMessageW(&msg);  // Sends the message to the WindowProc
         }
+
+        // Stop vibe.d event loop
+        exitEventLoop(true);
     }
 
     public bool stop()
     {
-        return PostMessageW(cast(HWND)hWnd, WM_DESTROY, WPARAM(), LPARAM()) != FALSE;
+        return PostMessageW(cast(HWND)hWnd, WM_CLOSE, WPARAM(), LPARAM()) != FALSE;
     }
 
     const(wchar[]) CLASS_NAME = cast(shared)"aida64httpWindowClass"w.dup;
     const(wchar[]) WINDOW_NAME = cast(shared)"aida64http"w.dup;
     private HINSTANCE hInstance;
     private HWND hWnd;
-}
-
-public void worker(void delegate() shared dg)
-{
-    dg();
 }
 
 extern (Windows) private LRESULT wndProc(HWND hWnd, uint msg, WPARAM wParam, LPARAM lParam) @nogc nothrow

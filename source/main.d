@@ -24,7 +24,8 @@ import vibe.stream.tls : createTLSContext, TLSContextKind;
 import vibe.web.rest : registerRestInterface, RestInterfaceSettings;
 
 import options;
-import provider.sensors : SensorsProvider, worker;
+import window.msgloop : MessageLoop;
+import provider.sensors : SensorsProvider;
 import rest.auth.provider : AuthProvider;
 import rest.service : Service;
 
@@ -82,12 +83,22 @@ int myWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, string[] args, int i
 	}
 	finalizeCommandLineOptions();
 
+	MessageLoop msgLoop = new MessageLoop(hInstance);
+	auto msgLoopWorkerThread = spawn(&worker, &msgLoop.run);
+	scope (exit)
+	{
+		//writeln("Stopping Windows message loop...");
+//		msgLoop.stop();
+		// string result = receiveOnly!string();
+		//writeln("Worker finished ", result);
+	}
+
 	SensorsProvider provider = new SensorsProvider(opts.hostName);
-	auto workerThread = spawn(&worker, &provider.start);
+	auto providerWorkerThread = spawn(&worker, &provider.start);
 	scope (exit)
 	{
 		writeln("Stopping Worker...");
-		workerThread.send(0);
+		providerWorkerThread.send(0);
 		string result = receiveOnly!string();
 		writeln("Worker finished ", result);
 	}
@@ -130,66 +141,10 @@ int myWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, string[] args, int i
 
 int main(string[] args)
 {
-	string configPath = ""; // aida64http.conf
-	readOption("config", &configPath, "Path to the configuration file.");
-
-	Options opts;
-	try
-	{
-		opts = getOptions(configPath);
-	}
-	catch (Exception e)
-	{
-		writeln("Invalid argumens: ", e.message());
-		printCommandLineHelp();
-		return -1;
-	}
-	finalizeCommandLineOptions();
-	
-	writeln("Host name: ", opts.hostName);
-	
-	SensorsProvider provider = new SensorsProvider(opts.hostName);
-	auto workerThread = spawn(&worker, &provider.start);
-	scope (exit)
-	{
-		writeln("Stopping Worker...");
-		workerThread.send(0);
-		string result = receiveOnly!string();
-		writeln("Worker finished ", result);
-	}
-
-	AuthProvider authProvider = new AuthProvider(opts.authTokens, opts.authTokens.length == 0);
-	Service restService = new Service(provider, authProvider);
-
-	auto restSettings = new RestInterfaceSettings;
-	auto router = new URLRouter;
-	registerRestInterface(router, restService, restSettings);
-	router.get("/metrics", handleMetrics(Registry.global));
-
-	auto settings = new HTTPServerSettings;
-	settings.bindAddresses = opts.bindAddresses.length != 0 ? opts.bindAddresses : ["127.0.0.1"];
-	settings.port = opts.port != 0 ? opts.port : 8080;
-	settings.useCompressionIfPossible = true;
-
-	if (opts.privateKeyFile.length != 0)
-	{
-		settings.tlsContext = createTLSContext(TLSContextKind.server);
-		settings.tlsContext.useCertificateChainFile(opts.certificateChainFile);
-		settings.tlsContext.usePrivateKeyFile(opts.privateKeyFile);
-	}
-
-	if (opts.logDir.length != 0)
-	{
-		settings.accessLogFile = buildPath(opts.logDir, "access.log");
-	}
-
-	auto listener = listenHTTP(settings, router);
-	scope (exit)
-	{
-		listener.stopListening();
-	}
-
-	runApplication(&args);
-
 	return 0;
+}
+
+private void worker(void delegate() shared dg)
+{
+    dg();
 }
