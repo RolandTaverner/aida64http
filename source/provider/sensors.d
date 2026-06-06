@@ -90,12 +90,6 @@ public struct SensorData
     immutable SysTime timestamp;
 }
 
-public void worker(void delegate() shared dg)
-{
-    dg();
-    // writeln("Worker dg: exit");
-}
-
 private shared class SensorDataStore
 {
     this(string hostName, Sensor[] sensors)
