@@ -35,6 +35,6 @@
 	"targetName": "aida64http",
 	"targetType": "executable",
 	"targetPath": "bin/$BUILD_TYPE",
-	"dflags": ["-L/SUBSYSTEM:WINDOWS", "-L/ENTRY:wWinMainCRTStartup", "-Lresource\\aida64http.res"],
+	"dflags": ["-L/SUBSYSTEM:WINDOWS", "-L/ENTRY:wWinMainCRTStartup", "-Lresource\\aida64http.res", "-LShell32.lib"],
 	"versions": ["VibeDisableCommandLineParsing"]
 }

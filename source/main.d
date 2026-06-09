@@ -5,8 +5,9 @@ import std.concurrency : receiveOnly, send, spawn, Tid;
 import std.conv : to;
 import std.exception : enforce;
 import std.format : format;
+import std.logger;
 import std.path : buildPath;
-import std.stdio : writeln;
+import std.stdio : File, writeln;
 import std.string : fromStringz;
 import std.utf : toUTF16z;
 
@@ -82,6 +83,13 @@ int myWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, string[] args, int i
 		return -1;
 	}
 	finalizeCommandLineOptions();
+
+	File logFile;
+	if (opts.logDir.length != 0)
+	{
+		logFile = File(buildPath(opts.logDir, "aida64.log"), "w");
+		sharedLog = cast(shared) new FileLogger(logFile);
+	}
 
 	MessageLoop msgLoop = new MessageLoop(hInstance);
 	auto msgLoopWorkerThread = spawn(&worker, &msgLoop.run);
