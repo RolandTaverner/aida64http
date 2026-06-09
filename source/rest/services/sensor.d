@@ -1,10 +1,11 @@
 module rest.services.sensor;
 
-import std.algorithm.iteration : map;
+import std.algorithm.iteration : filter, map;
 import std.algorithm.mutation : SwapStrategy;
 import std.algorithm.sorting : sort;
 import std.array : array, replace;
 import std.conv : to;
+import std.string : isNumeric;
 
 import vibe.web.auth;
 import vibe.web.common : noRoute;
@@ -28,6 +29,7 @@ class SensorService : SensorAPI
         result.hostName  = data.hostName.dup;
         result.timestamp = data.timestamp.toISOExtString().replace(":", "-").replace(".", "_");
         result.sensors = data.sensors.dup
+            .filter!(s => isNumeric(s.value))
             .map!(s => SensorDTO(s.unit, s.id, s.label, to!double(s.value))).array
             .sort!((a, b) => a.id < b.id, SwapStrategy.stable).array;
 

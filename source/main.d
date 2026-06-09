@@ -12,7 +12,7 @@ import std.utf : toUTF16z;
 
 import windows.win32.foundation : HINSTANCE, HLOCAL, HWND, PWSTR, LocalFree;
 import windows.win32.system.environment : GetCommandLineW;
-import windows.win32.ui.windowsandmessaging : MessageBoxW, MB_OK, MB_ICONEXCLAMATION;
+import windows.win32.ui.windowsandmessaging : MessageBoxW, MB_OK, MB_ICONERROR;
 import windows.win32.ui.shell : CommandLineToArgvW;
 
 import prometheus.registry : Registry;
@@ -55,7 +55,7 @@ int wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdLine, int 
     }
     catch(Throwable o)
     {
-        MessageBoxW(HWND(null), PWSTR(cast(wchar*)o.toString().toUTF16z), PWSTR(cast(wchar*)"Error".toUTF16z), MB_OK | MB_ICONEXCLAMATION);
+        MessageBoxW(HWND(null), PWSTR(cast(wchar*)o.toString().toUTF16z), PWSTR(cast(wchar*)"Error".toUTF16z), MB_OK | MB_ICONERROR);
         result = 0;
     }
 
