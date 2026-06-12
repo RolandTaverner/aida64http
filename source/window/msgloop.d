@@ -37,8 +37,6 @@ public shared class MessageLoop
             info("Tray icon created");
         }
 
-        //ShowWindow(cast(HWND)hWnd, 1);
-
         info("Starting message loop");
         // Run message loop
         MSG msg;
@@ -65,23 +63,24 @@ public shared class MessageLoop
     {
         auto className = PWSTR(cast(wchar*) CLASS_NAME.ptr);
 
-        HICON icon = LoadIconW(cast(HINSTANCE) hInstance,
-            PWSTR(cast(wchar*)(cast(ushort) IDI_AIDA64HTTP_ICON)));
+        HICON icon = LoadIconW(cast(HINSTANCE) hInstance, makeIntResource(IDI_AIDA64HTTP_ICON));
+        assert(icon.Value != null, "LoadIconW for IDI_AIDA64HTTP_ICON returned null");
         if (icon.Value == null)
         {
             error("LoadIconW error");
             return false;
         }
 
-        HICON iconSmall = LoadIconW(cast(HINSTANCE) hInstance,
-            PWSTR(cast(wchar*)(cast(ushort) IDI_AIDA64HTTP_ICON_SMALL)));
+        HICON iconSmall = LoadIconW(cast(HINSTANCE) hInstance, makeIntResource(IDI_AIDA64HTTP_ICON_SMALL));
+        assert(icon.Value != null, "LoadIconW for IDI_AIDA64HTTP_ICON_SMALL returned null");
         if (iconSmall.Value == null)
         {
             error("LoadIconW error");
             return false;
         }
 
-        hMenu = cast(shared) LoadMenuW(cast(HINSTANCE) hInstance, PWSTR(cast(wchar*)(cast(ushort) IDC_AIDA64HTTP_MENU)));
+        hMenu = cast(shared) LoadMenuW(cast(HINSTANCE) hInstance, makeIntResource(IDC_AIDA64HTTP_MENU));
+        assert(hMenu.Value != null, "LoadMenuW returned null");
         if (hMenu.Value == null)
         {
             error("LoadMenuW error");
@@ -89,6 +88,7 @@ public shared class MessageLoop
         }
 
         hPopupMenu = cast(shared) GetSubMenu(cast(HMENU) hMenu, 0);
+        assert(hPopupMenu.Value != null, "GetSubMenu returned null");
         if (hPopupMenu.Value == null)
         {
             error("GetSubMenu error");
@@ -119,8 +119,8 @@ public shared class MessageLoop
     {
         NOTIFYICONDATAW notifyIconData = NOTIFYICONDATAW();
 
-        HICON icon = LoadIconW(cast(HINSTANCE) hInstance,
-            PWSTR(cast(wchar*)(cast(ushort) IDI_AIDA64HTTP_ICON_SMALL)));
+        HICON icon = LoadIconW(cast(HINSTANCE) hInstance, makeIntResource(IDI_AIDA64HTTP_ICON_SMALL));
+        assert(icon.Value != null, "LoadIconW for IDI_AIDA64HTTP_ICON_SMALL returned null");
         if (icon.Value == null)
         {
             error("LoadIconW error");
@@ -180,6 +180,11 @@ public shared class MessageLoop
         PostMessageW(cast(HWND)hWnd, WM_NULL, WPARAM(0), LPARAM(0));
     }
 
+    public HINSTANCE getInstance() const @nogc nothrow
+    {
+        return cast(HINSTANCE) hInstance;
+    }
+
     private const(wchar[]) CLASS_NAME = cast(shared) "aida64httpWindowClass"w.dup;
     private const(wchar[]) WINDOW_NAME = cast(shared) "aida64http"w.dup;
     private HINSTANCE hInstance;
@@ -195,22 +200,73 @@ extern (Windows) private LRESULT wndProc(HWND hWnd, uint msg, WPARAM wParam, LPA
 {
     switch (msg)
     {
+    case WM_COMMAND:
+        ushort wmId = cast(ushort) wParam.Value;
+        // Parse the menu selections:
+        switch (wmId)
+        {
+        case IDM_ABOUT:
+            auto userData = cast (void*) GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+            assert(userData != null, "GetWindowLongPtrW returned null");
+            if (userData != null)
+            {
+                auto thisPtr = cast(shared MessageLoop) userData;
+                DialogBoxParamW(thisPtr.getInstance(), makeIntResource(IDD_ABOUTBOX), hWnd, &aboutWndProc, LPARAM());
+            }
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProcW(hWnd, msg, wParam, lParam);
+        }
+        break;
     case WM_TRAYICON:
         ushort lParamLoWord = cast(ushort) lParam.Value;
         if (lParamLoWord == WM_RBUTTONUP || lParamLoWord == WM_CONTEXTMENU)
         {
             auto userData = cast (void*) GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+            assert(userData != null, "GetWindowLongPtrW returned null");
             if (userData != null)
             {
                 auto thisPtr = cast(shared MessageLoop) userData;
                 thisPtr.showTrayMenu();
             }
         }
-        return LRESULT(0);
+        break;
     case WM_DESTROY:
         PostQuitMessage(0); // Signals the message loop to terminate
-        return LRESULT(0);
+        break;
     default:
         return DefWindowProcW(hWnd, msg, wParam, lParam); // Default processing
     }
+
+    return LRESULT(0);
+}
+
+// Message handler for about box.
+extern (Windows) private ptrdiff_t aboutWndProc(HWND hDlg, uint msg, WPARAM wParam, LPARAM lParam) @nogc nothrow
+{
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        return TRUE.Value;
+    case WM_COMMAND:
+        ushort wmId = cast(ushort) wParam.Value;
+        if (wmId == IDOK || wmId == IDCANCEL)
+        {
+            EndDialog(hDlg, wmId);
+            return TRUE.Value;
+        }
+        break;
+    default:
+        // do nothing
+    }
+
+    return FALSE.Value;
+}
+
+PWSTR makeIntResource(uint resourceId) @nogc nothrow
+{
+    return PWSTR(cast(wchar*)(cast(ushort) resourceId));
 }
