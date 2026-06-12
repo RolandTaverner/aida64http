@@ -1,3 +1,5 @@
+// Build with rc /r /8 /v aida64http.rc from VS Tools command prompt
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -36,5 +38,14 @@ BEGIN
     BLOCK "VarFileInfo"
     BEGIN
         VALUE "Translation", 0x409, 1200
+    END
+END
+
+IDC_AIDA64HTTP_MENU MENU
+BEGIN
+    POPUP "TrayIcon"
+    BEGIN
+        MENUITEM "&About ...",                  IDM_ABOUT
+        MENUITEM "E&xit",                       IDM_EXIT
     END
 END
