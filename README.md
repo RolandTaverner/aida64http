@@ -122,8 +122,8 @@ logDir = "c:\some\log"
 
 # HTTPS settings. HTTPS is disabled if not configured.
 certificateChainFile = "ca.crt"
-privateKeyFile = "host.crt"
-trustedCertificateFile = "host.key"
+privateKeyFile = "host.key"
+trustedCertificateFile = "host.crt"
 
 # Authorization tokens. If configured, one of them must be provided in the HTTP header: 'Authorization: Bearer aaa'.
 authTokens = aaa,bbb
